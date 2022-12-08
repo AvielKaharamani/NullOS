@@ -1,5 +1,14 @@
+# disk
+*.flp
+
+# binaries
+*.bin
+
 ### Linux ###
 *~
+
+# MacOS directory preferences
+.DS_Store
 
 # temporary files which can be created if a process still has a handle open of a deleted file
 .fuse_hidden*
