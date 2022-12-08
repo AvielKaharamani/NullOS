@@ -1,16 +1,17 @@
 org 0x7c00
 
+; save the current disk index for later use
+mov [CURR_DISK], dl
 ; setting up stack
 mov bp, 0x7c00
 mov sp, bp
 
-mov bx, testStr
-call printString
+call load_stage2_from_disk
 
-testStr:
-    db "Aviel the king!", 0
+jmp STAGE2_ADDR
 
-%include "string.asm"
+%include "Utils/strings.asm"
+%include "Utils/disk.asm"
 
 times 510 - ($ - $$) db 0
 

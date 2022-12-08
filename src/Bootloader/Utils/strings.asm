@@ -1,5 +1,5 @@
 
-printString:
+print_string:
     mov ah, 0xe
 .repeat:
     mov al, [bx]
