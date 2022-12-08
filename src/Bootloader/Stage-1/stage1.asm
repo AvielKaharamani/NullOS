@@ -8,10 +8,12 @@ mov sp, bp
 
 call load_stage2_from_disk
 
+call clear_screen
+
 jmp STAGE2_ADDR
 
-%include "Utils/strings.asm"
-%include "Utils/disk.asm"
+%include "Stage-1/strings.asm"
+%include "Stage-1/disk.asm"
 
 times 510 - ($ - $$) db 0
 

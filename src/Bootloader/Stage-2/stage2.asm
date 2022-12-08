@@ -1,11 +1,7 @@
 org 0x7e00
 
-mov bx, STAGE2_SUCCESS_MSG
-call print_string
-
 jmp enter_protected_mode
 
-%include "Utils/strings.asm"
 %include "Stage-2/gdt.asm"
 
 ; using fast a20 gate
@@ -34,6 +30,9 @@ enter_protected_mode:
 
 [bits 32]
 
+%include "Stage-2/strings.asm"
+%include "Stage-2/cpuid.asm"
+
 start_protected_mode:
 
     ; setting up all the data segments the the data 
@@ -44,8 +43,18 @@ start_protected_mode:
     mov fs, ax
     mov gs, ax
 
-    jmp $
+    mov ebx, PROTECTED_MODE_SUCCESS_MSG
+    call print_string
 
-STAGE2_SUCCESS_MSG db "stage2 loaded successfully!", 0
+    jmp enter_long_mode
+
+enter_long_mode:
+    call detect_cpuid
+
+    
+
+    ret
+
+PROTECTED_MODE_SUCCESS_MSG db "Entered protected mode", 0
 
 times 2048 - ($ - $$) db 0
