@@ -72,7 +72,7 @@ enter_long_mode:
 
 move_to_64_bit_long_mode:
 
-    call _start ; call to our kernel
+    ;call _start ; call to our kernel
 
     jmp $
 
