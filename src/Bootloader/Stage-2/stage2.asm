@@ -25,15 +25,15 @@ enter_protected_mode:
     mov cr0, eax
     
     ; far jump (to update the code segment 'cs')
-    jmp code_segment:start_protected_mode
+    jmp code_segment:move_to_32_protected_mode
 
 
 [bits 32]
 
-%include "Stage-2/strings.asm"
+%include "Stage-2/identical_paging.asm"
 %include "Stage-2/cpuid.asm"
 
-start_protected_mode:
+move_to_32_protected_mode:
 
     ; setting up all the data segments the the data 
     mov ax, data_segment
@@ -43,18 +43,37 @@ start_protected_mode:
     mov fs, ax
     mov gs, ax
 
-    mov ebx, PROTECTED_MODE_SUCCESS_MSG
-    call print_string
-
     jmp enter_long_mode
 
 enter_long_mode:
     call detect_cpuid
+    call setup_identical_paging
+    call fit_gdt_long_mode
 
+    ; enable physical address extension bit (in cr4)
+    mov eax, cr4
+    or eax, 1 << 5 ; pae bit
+    mov cr4, eax
+
+    ; enable long mode bit inside the efer msr
+    mov ecx, 0xC0000080 ; EFER (Extended Feature Enable Register) msr
+    rdmsr
+    or eax, 1 << 8
+    wrmsr
+
+    ; enable paging bit (in cr4)
+    mov eax, cr0
+    or eax, 1 << 31
+    mov cr0, eax
     
+    jmp code_segment:move_to_64_bit_long_mode
 
-    ret
+[bits 64]
 
-PROTECTED_MODE_SUCCESS_MSG db "Entered protected mode", 0
+move_to_64_bit_long_mode:
+
+    call _start ; call to our kernel
+
+    jmp $
 
 times 2048 - ($ - $$) db 0

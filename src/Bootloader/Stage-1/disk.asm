@@ -2,7 +2,6 @@
 STAGE2_ADDR equ 0x7e00
 
 load_stage2_from_disk:
-
     ; Read disk function from (int 0x13)
     mov ah, 0x2
 

@@ -33,8 +33,6 @@ detect_cpuid:
     ret
 
     .no_cpuid:
-    mov ebx, CPUID_ISNT_SUPPORTED_MSG
-    call print_string
     jmp $
 
 detect_long_mode:
@@ -53,10 +51,4 @@ detect_long_mode:
     ret
 
     .no_long_mode:
-    mov ebx, LONG_MODE_ISNT_SUPPORTED_MSG
-    call print_string
     jmp $
-
-
-CPUID_ISNT_SUPPORTED_MSG db "cpuid isn't supported!", 0
-LONG_MODE_ISNT_SUPPORTED_MSG db "long mode isn't supported!", 0

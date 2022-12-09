@@ -21,8 +21,19 @@ gdt_data_descriptor:
 
 gdt_descriptor:
     gdt_size: dw gdt_end - gdt_null_descriptor - 1
-    gdt_offset: dd gdt_null_descriptor
-
+    gdt_offset: dq gdt_null_descriptor
 
 code_segment equ gdt_code_descriptor - gdt_null_descriptor
 data_segment equ gdt_data_descriptor - gdt_null_descriptor
+
+[bits 32]
+
+fit_gdt_long_mode:
+    ; enable long mode flag and disable size flag (because long mode enforce the size flag to be cleared)
+
+    mov byte [gdt_code_descriptor + 6], 0b10101111
+
+    mov byte [gdt_data_descriptor + 6], 0b10101111
+    ret
+
+[bits 16]
