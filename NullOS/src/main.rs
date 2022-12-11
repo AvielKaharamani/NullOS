@@ -12,7 +12,7 @@ pub extern "C" fn _start() -> ! {
     let vga_memory = 0xb8000 as *mut u8;
 
     // printing welcome message
-    for (i, &ch) in WELCOME_MSG.iter().emumerate() {
+    for (i, &ch) in WELCOME_MSG.iter().enumerate() {
         unsafe {
             *vga_memory.add(i * 2) = ch;
         }

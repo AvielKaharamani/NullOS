@@ -1,15 +1,17 @@
-org 0x7e00
+
+mov bx, STAGE2_MSG
+call print_string
+
+; Load Kernel from disk into memory
+mov bx, KERNEL_ADDR
+mov si, 0
+mov eax, 0
+mov cx, (kernel_end - kernel_start) / SECTOR_SIZE
+call disk_load
 
 jmp enter_protected_mode
 
-%include "Stage-2/gdt.asm"
-
-; using fast a20 gate
-enable_a20_line:
-    in al, 0x92
-    or al, 2
-    out 0x92, al
-    ret
+%include "Bootloader/Stage-2/gdt.asm"
 
 enter_protected_mode:
     call enable_a20_line
@@ -27,11 +29,17 @@ enter_protected_mode:
     ; far jump (to update the code segment 'cs')
     jmp code_segment:move_to_32_protected_mode
 
+; using fast a20 gate
+enable_a20_line:
+    in al, 0x92
+    or al, 2
+    out 0x92, al
+    ret
 
 [bits 32]
 
-%include "Stage-2/identical_paging.asm"
-%include "Stage-2/cpuid.asm"
+%include "Bootloader/Stage-2/identical_paging.asm"
+%include "Bootloader/Stage-2/cpuid.asm"
 
 move_to_32_protected_mode:
 
@@ -70,10 +78,14 @@ enter_long_mode:
 
 [bits 64]
 
+%include "Bootloader/Stage-2/elf.asm"
+
 move_to_64_bit_long_mode:
-
-    ;call _start ; call to our kernel
-
+    mov rbx, KERNEL_ADDR
+    call parse_elf
+    
+    jmp rax ; jump to the kernel entry point
+    
     jmp $
 
-times 2048 - ($ - $$) db 0
+STAGE2_MSG db "On stage2!", 0
