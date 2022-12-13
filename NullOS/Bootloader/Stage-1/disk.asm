@@ -1,40 +1,38 @@
 
-STAGE2_ADDR equ 0x7e00
-KERNEL_ADDR equ 0x8000
 MAX_SECTORS_IN_ONE_TIME equ 127
 SECTOR_SIZE equ 512
 SEGMENT_SHIFT equ 4
 
-; si = address of the base segment
+; dx = address of the base segment
 ; cx = number of sectors to read
 ; bx = memory offset
 ; eax = begin reading address
 disk_load:
 
     ; Read disk function from (int 0x13)
-    mov ah, 0x42
-    mov dl, [CURR_DISK]
-
     cmp cx, MAX_SECTORS_IN_ONE_TIME
     ja .above_max_sectors_in_one_time
 
     mov [DAP.sectors_to_load], cx
     mov [DAP.offset], bx
-    mov [DAP.segment], si
+    mov [DAP.segment], dx
     mov [DAP.address], eax
+
+    mov dl, [CURR_DISK]
+    mov si, DAP
+    mov ah, 0x42
     ; https://en.wikipedia.org/wiki/INT_13H#INT_13h_AH=42h:_Extended_Read_Sectors_From_Drive
     int 0x13
 
     ; if int 0x13 reading function fails carry flag turns on
-    jnc .success
+    jc .falied
+    ret
 
+.falied:
     ; if failed print the error message and freeze
     mov bx, DISK_ERROR_MSG
     call print_string
     jmp $
-
-.success:
-    ret
 
 .above_max_sectors_in_one_time:
 
@@ -45,7 +43,7 @@ disk_load:
 
     add eax, MAX_SECTORS_IN_ONE_TIME
     sub cx, MAX_SECTORS_IN_ONE_TIME
-    add si, (MAX_SECTORS_IN_ONE_TIME * SECTOR_SIZE) >> SEGMENT_SHIFT
+    add dx, (MAX_SECTORS_IN_ONE_TIME * SECTOR_SIZE) >> SEGMENT_SHIFT
 
     jmp disk_load
 

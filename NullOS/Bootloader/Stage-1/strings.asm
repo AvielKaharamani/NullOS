@@ -16,6 +16,27 @@ print_string:
     pop bx
     ret
 
+print_num:
+    pusha
+    xor cx, cx
+.for_each_digit:
+    xor dx, dx
+    mov bx, 10
+    div bx
+    push dx
+    inc cx
+    cmp ax, 0
+    jne .for_each_digit
+
+.print_digit:
+    pop ax
+    mov ah, 0xe
+    add al, '0'
+    int 0x10
+    loop .print_digit
+    popa
+    ret
+
 clear_screen:
     push ax
     mov ah, 0x00 ; change graphics mode

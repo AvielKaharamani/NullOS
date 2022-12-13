@@ -1,24 +1,41 @@
-org 0x7c00
+[bits 16]
 
-; save the current disk index for later use
-mov [CURR_DISK], dl
-; setting up stack
-mov bp, 0x7c00
-mov sp, bp
+bootloader_entry:
+    xor ax, ax
+    mov ds, ax
+    mov ss, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
 
-call clear_screen
+    jmp 0x0:.init_cs
 
-; Load stage 2 from disk into memory
-mov bx, STAGE2_ADDR
-mov si, 0
-mov eax, 0
-mov cx, (stage2_end - stage2_start) / SECTOR_SIZE
-call disk_load
+.init_cs:
 
-jmp STAGE2_ADDR
+    ; save the current disk index for later use
+    mov [CURR_DISK], dl
+    ; setting up stack
+    mov bp, 0x7c00
+    mov sp, bp
+
+    ;call clear_screen
+    
+    mov bx, JUMPING_MSG
+    call print_string
+
+    ; Load stage 2 from disk into memory
+    mov bx, stage2_start
+    mov dx, cs
+    mov eax, (stage2_start - stage1_start) / SECTOR_SIZE
+    mov cx, (stage2_end - stage2_start) / SECTOR_SIZE
+    call disk_load
+    
+    jmp stage2_start
 
 %include "Bootloader/Stage-1/strings.asm"
 %include "Bootloader/Stage-1/disk.asm"
+
+JUMPING_MSG db "Jumping to stage2!", 0
 
 times 510 - ($ - $$) db 0
 

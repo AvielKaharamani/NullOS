@@ -1,12 +1,12 @@
-
 mov bx, STAGE2_MSG
 call print_string
 
 ; Load Kernel from disk into memory
-mov bx, KERNEL_ADDR
-mov si, 0
-mov eax, 0
+mov bx, kernel_start
+mov dx, cs
+mov eax, (kernel_start - stage1_start) / SECTOR_SIZE
 mov cx, (kernel_end - kernel_start) / SECTOR_SIZE
+mov ax, cx
 call disk_load
 
 jmp enter_protected_mode
@@ -81,7 +81,7 @@ enter_long_mode:
 %include "Bootloader/Stage-2/elf.asm"
 
 move_to_64_bit_long_mode:
-    mov rbx, KERNEL_ADDR
+    mov rbx, kernel_start
     call parse_elf
     
     jmp rax ; jump to the kernel entry point

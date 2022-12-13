@@ -1,3 +1,5 @@
+org 0x7c00
+
 stage1_start:
     %include "Bootloader/Stage-1/stage1.asm"
 stage1_end:
