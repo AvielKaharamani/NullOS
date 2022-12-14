@@ -21,7 +21,7 @@ bootloader_entry:
     ;call clear_screen
     
     mov bx, JUMPING_MSG
-    call print_string
+    call print_string_with_new_line
 
     ; Load stage 2 from disk into memory
     mov bx, stage2_start

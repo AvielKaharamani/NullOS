@@ -1,3 +1,9 @@
+print_char:
+    push ax
+    mov ah, 0eh
+    int 10h
+    pop ax
+    ret
 
 print_string:
     push bx
@@ -14,6 +20,20 @@ print_string:
 .exit:
     pop ax
     pop bx
+    ret
+
+print_line:
+    push ax
+    mov al, 13
+    call print_char
+    mov al, 10
+    call print_char
+    pop ax
+    ret
+
+print_string_with_new_line:
+    call print_string
+    call print_line
     ret
 
 print_num:

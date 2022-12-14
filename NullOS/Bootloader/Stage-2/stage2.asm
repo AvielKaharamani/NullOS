@@ -1,40 +1,34 @@
-mov bx, STAGE2_MSG
-call print_string
+stage2_entry:
+    mov bx, STAGE2_MSG
+    call print_string_with_new_line
 
-; Load Kernel from disk into memory
-mov bx, kernel_start
-mov dx, cs
-mov eax, (kernel_start - stage1_start) / SECTOR_SIZE
-mov cx, (kernel_end - kernel_start) / SECTOR_SIZE
-mov ax, cx
-call disk_load
+    call enable_a20_line
+    call enter_unreal_mode
+    mov edi, KERNEL_MEMORY_ADDRESS
+    call load_kernel
 
-jmp enter_protected_mode
+    mov bx, LOAD_KERNEL_MSG
+    call print_string_with_new_line
 
+    jmp enter_protected_mode
+
+%include "Bootloader/Stage-2/unreal_mode.asm"
+%include "Bootloader/Stage-2/a20_line.asm"
 %include "Bootloader/Stage-2/gdt.asm"
+%include "Bootloader/Stage-2/load_kernel.asm"
 
 enter_protected_mode:
-    call enable_a20_line
 
-    lgdt [gdt_descriptor]
-
-    ; disable interupts before entering protected mode (becuase protected mode change the segmention)
+    ; disable interupts before entering protected mode
     cli
-
+    
     ; enable the protected mode bit in the cr0 (tell the cpu to enter protected mode)
     mov eax, cr0
     or eax, 1
     mov cr0, eax
-    
+
     ; far jump (to update the code segment 'cs')
     jmp code_segment:move_to_32_protected_mode
-
-; using fast a20 gate
-enable_a20_line:
-    in al, 0x92
-    or al, 2
-    out 0x92, al
-    ret
 
 [bits 32]
 
@@ -43,7 +37,7 @@ enable_a20_line:
 
 move_to_32_protected_mode:
 
-    ; setting up all the data segments the the data 
+    ; setting up all the data segments to data 
     mov ax, data_segment
     mov ds, ax
     mov ss, ax
@@ -81,11 +75,9 @@ enter_long_mode:
 %include "Bootloader/Stage-2/elf.asm"
 
 move_to_64_bit_long_mode:
-    mov rbx, kernel_start
-    call parse_elf
-    
-    jmp rax ; jump to the kernel entry point
-    
     jmp $
+    mov rax, KERNEL_MEMORY_ADDRESS
+    jmp rax ; jump to the kernel entry point
 
 STAGE2_MSG db "On stage2!", 0
+LOAD_KERNEL_MSG db "Kernel loaded to memory", 0

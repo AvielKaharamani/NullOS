@@ -1,4 +1,3 @@
-
 gdt_null_descriptor:
     dd 0
     dd 0
