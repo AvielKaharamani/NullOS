@@ -1,4 +1,4 @@
-KERNEL_MEMORY_ADDRESS equ 0x100000 ; 1MB
+KERNEL_MEMORY_ADDRESS equ 0x100000 ; 1MiB
 
 ; edi = where to store the kernel in memory
 load_kernel:

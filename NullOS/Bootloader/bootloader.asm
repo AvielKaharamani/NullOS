@@ -10,6 +10,6 @@ stage2_start:
 stage2_end:
 
 kernel_start:
-    incbin "target/x86_64-NullOS/debug/NullOS"
+    incbin "NullOS.bin"
     align 512, db 0
 kernel_end:

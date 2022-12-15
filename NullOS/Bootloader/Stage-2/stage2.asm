@@ -4,6 +4,8 @@ stage2_entry:
 
     call enable_a20_line
     call enter_unreal_mode
+
+
     mov edi, KERNEL_MEMORY_ADDRESS
     call load_kernel
 
@@ -36,7 +38,6 @@ enter_protected_mode:
 %include "Bootloader/Stage-2/cpuid.asm"
 
 move_to_32_protected_mode:
-
     ; setting up all the data segments to data 
     mov ax, data_segment
     mov ds, ax
@@ -75,7 +76,6 @@ enter_long_mode:
 %include "Bootloader/Stage-2/elf.asm"
 
 move_to_64_bit_long_mode:
-    jmp $
     mov rax, KERNEL_MEMORY_ADDRESS
     jmp rax ; jump to the kernel entry point
 
