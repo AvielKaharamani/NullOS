@@ -18,7 +18,7 @@ bootloader_entry:
     mov bp, 0x7c00
     mov sp, bp
 
-    ;call clear_screen
+    call clear_screen
     
     mov bx, JUMPING_MSG
     call print_string_with_new_line

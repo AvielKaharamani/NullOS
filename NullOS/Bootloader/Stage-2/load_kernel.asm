@@ -1,4 +1,4 @@
-KERNEL_MEMORY_ADDRESS equ 0x100000 ; 1MiB
+KERNEL_MEMORY_ADDRESS equ 0x100000 ; 1 MiB
 
 ; edi = where to store the kernel in memory
 load_kernel:
@@ -37,6 +37,3 @@ load_kernel:
 
 .exit:
     ret
-
-LOAD_CURR_KERNEL_PART db "Load kernel part: ", 0
-

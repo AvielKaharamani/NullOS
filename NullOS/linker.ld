@@ -1,6 +1,5 @@
-OUTPUT_FORMAT("binary")
+OUTPUT_FORMAT(binary)
 ENTRY(_start)
-
 
 SECTIONS {
     . = 1M;
@@ -9,14 +8,17 @@ SECTIONS {
 	{
 		*(.text)
 	}
-	.rodata : ALIGN (4K)
-	{
-		*(.rodata)
-	}
+
 	.data : ALIGN (4K)
 	{
 		*(.data)
 	}
+
+	.rodata : ALIGN (4K)
+	{
+		*(.rodata)
+	}
+
 	.bss : ALIGN (4K)
 	{
 		*(COMMON)
