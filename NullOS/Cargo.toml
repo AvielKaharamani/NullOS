@@ -5,6 +5,4 @@ edition = "2021"
 exclude = ["Bootloader/*"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-
-
 [dependencies]

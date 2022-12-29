@@ -76,6 +76,9 @@ enter_long_mode:
 %include "Bootloader/Stage-2/elf.asm"
 
 move_to_64_bit_long_mode:
+    mov rbp, 0x9fc00
+	mov rsp, rbp
+
     mov rax, KERNEL_MEMORY_ADDRESS
     jmp rax ; jump to the kernel entry point
 
