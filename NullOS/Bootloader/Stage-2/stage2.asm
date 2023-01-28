@@ -5,7 +5,6 @@ stage2_entry:
     call enable_a20_line
     call enter_unreal_mode
 
-
     mov edi, KERNEL_MEMORY_ADDRESS
     call load_kernel
 
@@ -70,17 +69,29 @@ enter_long_mode:
     mov cr0, eax
     
     jmp code_segment:move_to_64_bit_long_mode
+    
 
 [bits 64]
 
 %include "Bootloader/Stage-2/elf.asm"
 
 move_to_64_bit_long_mode:
+
     mov rbp, 0x9fc00
 	mov rsp, rbp
 
-    mov rax, KERNEL_MEMORY_ADDRESS
-    jmp rax ; jump to the kernel entry point
+    ; jmp 0x101000
+    ; jmp 0x1017B0
+    ; mov byte [0xb8000], al
+    ; mov rax, [KERNEL_MEMORY_ADDRESS + (kernel_end - kernel_start) - 8]
+    mov rax, [entry_point]
+    jmp rax
+    ; mov rbx, KERNEL_MEMORY_ADDRESS
+    ; call parse_elf
+    ; jmp rax ; jump to the kernel entry point
+
+    jmp $
+
 
 STAGE2_MSG db "On stage2!", 0
 LOAD_KERNEL_MSG db "Kernel loaded to memory", 0

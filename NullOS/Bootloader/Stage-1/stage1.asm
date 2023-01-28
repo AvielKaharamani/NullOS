@@ -36,7 +36,3 @@ bootloader_entry:
 %include "Bootloader/Stage-1/disk.asm"
 
 JUMPING_MSG db "Jumping to stage2!", 0
-
-times 510 - ($ - $$) db 0
-
-dw 0xaa55
