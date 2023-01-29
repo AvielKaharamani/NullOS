@@ -3,7 +3,6 @@
 #![no_std] // don't link the Rust standard library
 #![no_main] // disable all Rust-level entry points (main isnt needed because our entry point is _start)
 use core::panic::PanicInfo;
-extern crate compiler_builtins;
 
 static WELCOME_MSG: &[u8] = b"Aviel king pro noder nader!";
 
