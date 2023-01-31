@@ -4,7 +4,7 @@
 #![no_main] // disable all Rust-level entry points (main isnt needed because our entry point is _start)
 use core::panic::PanicInfo;
 
-static WELCOME_MSG: &[u8] = b"Aviel king pro noder nader!";
+static WELCOME_MSG: &[u8] = b"Welcome to NullOS!";
 
 #[no_mangle]
 pub extern "C" fn _start() -> ! {

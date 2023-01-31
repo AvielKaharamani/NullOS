@@ -84,8 +84,7 @@ move_to_64_bit_long_mode:
     ; jmp 0x1017B0
     ; mov byte [0xb8000], al
     ; mov rax, [KERNEL_MEMORY_ADDRESS + (kernel_end - kernel_start) - 8]
-    mov rax, [entry_point]
-    jmp rax
+    jmp [entry_point]
     ; mov rbx, KERNEL_MEMORY_ADDRESS
     ; call parse_elf
     ; jmp rax ; jump to the kernel entry point

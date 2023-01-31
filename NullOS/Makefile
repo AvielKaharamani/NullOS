@@ -1,7 +1,8 @@
 release: build_release only_run
 debug: build_debug only_run
 
-gdb: build_debug only_gdb
+gdb: build_debug only_gdb_qemu only_gdb_for_kernel
+gdb_bootloader: build_debug only_gdb_qemu only_gdb_for_bootloader
 
 build_release: build_kernel_release build_disk
 build_debug: build_kernel_debug build_disk
@@ -26,8 +27,17 @@ only_run:
 only_debug:
 	qemu-system-x86_64 -drive file=disk.flp,format=raw -monitor stdio
 
-only_gdb:
-	qemu-system-x86_64 -S -s -drive file=disk.flp,format=raw
+only_gdb_qemu:
+	qemu-system-x86_64 -S -s -drive file=disk.flp,format=raw &
+	clear
+
+only_gdb_for_kernel:
+	x86_64-elf-gdb ./disk.flp -ex 'target remote localhost:1234' -ex 'break *0x7fb7' -ex 'continue' -ex 'n'
+	killall qemu-system-x86_64
+
+only_gdb_for_bootloader:
+	x86_64-elf-gdb ./disk.flp -ex 'target remote localhost:1234' -ex 'break *0x7c00' -ex 'continue'
+	killall qemu-system-x86_64
 
 clean:
 	rm -f NullOS.bin NullOS.elf *.flp
