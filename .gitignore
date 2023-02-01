@@ -1,5 +1,6 @@
-#gdb
+#running the program
 .gdb_history
+entry_point
 
 # disk
 *.flp
