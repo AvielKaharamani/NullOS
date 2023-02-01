@@ -4,34 +4,21 @@
 #![no_main] // disable all Rust-level entry points (main isnt needed because our entry point is _start)
 use core::panic::PanicInfo;
 
-static WELCOME_MSG: &[u8] = b"Welcome to NullOS!";
+#[macro_use] // vec! macro
+pub mod vga_buffer;
+
+static WELCOME_MSG: &str = "Welcome to NullOS!";
 
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
-    let vga_memory = 0xb8000 as *mut u8;
-
-    // printing welcome message
-    for (i, &ch) in WELCOME_MSG.iter().enumerate() {
-        unsafe {
-            *vga_memory.add(i * 2) = ch;
-        }
-    }
+    println!("Welcome msg: {}", WELCOME_MSG);
 
     loop {}
 }
 
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
-    let vga_memory = 0xb8000 as *mut u8;
+    println!("Panic!");
 
-    unsafe {
-        *vga_memory = 'P' as u8;
-        *vga_memory.add(2) = 'a' as u8;
-        *vga_memory.add(4) = 'n' as u8;
-        *vga_memory.add(6) = 'i' as u8;
-        *vga_memory.add(8) = 'c' as u8;
-        *vga_memory.add(10) = '!' as u8;
-        *vga_memory.add(12) = ' ' as u8;
-    }
     loop {}
 }
