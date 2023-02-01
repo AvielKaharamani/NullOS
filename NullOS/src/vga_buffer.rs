@@ -56,7 +56,7 @@ impl Writer {
         use core::fmt::Write;
         match byte {
             b'\t' => {
-                self.write_str("    ");
+                self.write_str("    ").unwrap();
             },
             b'\n' => {
                 self.new_line();   
