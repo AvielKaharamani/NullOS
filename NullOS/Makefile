@@ -1,8 +1,9 @@
 release: build_release only_run
 debug: build_debug only_run
 
-gdb: build_debug only_gdb_qemu only_gdb_for_kernel
-gdb_bootloader: build_debug only_gdb_qemu only_gdb_for_bootloader
+gdb: build_release only_gdb_qemu only_gdb_for_kernel
+gdb_debug: build_debug only_gdb_qemu only_gdb_for_kernel
+gdb_bootloader: build_release only_gdb_qemu only_gdb_for_bootloader
 
 build_release: build_kernel_release build_disk
 build_debug: build_kernel_debug build_disk
