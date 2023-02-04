@@ -31,7 +31,6 @@ fit_gdt_long_mode:
     ; enable long mode flag and disable size flag (because long mode enforce the size flag to be cleared)
 
     mov byte [gdt_code_descriptor + 6], 0b10101111
-
     mov byte [gdt_data_descriptor + 6], 0b10101111
     ret
 

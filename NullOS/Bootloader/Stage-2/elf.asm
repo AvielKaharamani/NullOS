@@ -5,7 +5,7 @@ SEGMENT_OFFSET_HEADER_OFFSET equ 0x08
 MEMORY_ADDRESS_HEADER_OFFSET equ 0x10
 
 ; rbx - base address of elf
-; return: The entry point of the program
+; return: rax - The entry point of the program
 parse_elf:
     mov rdx, [rbx + ELF_HEADER_OFFSET] ; get the header start offset
     add rdx, rbx ; get the header start address

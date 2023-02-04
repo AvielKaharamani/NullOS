@@ -49,6 +49,7 @@ move_to_32_protected_mode:
 
 enter_long_mode:
     call detect_cpuid
+    call detect_long_mode
     call setup_identical_paging
     call fit_gdt_long_mode
 
@@ -77,14 +78,14 @@ enter_long_mode:
 
 move_to_64_bit_long_mode:
 
+    ; making the stack bigger
     mov rbp, 0x9fc00
 	mov rsp, rbp
 
-    ; jmp 0x101000
-    ; jmp 0x1017B0
-    ; mov byte [0xb8000], al
-    ; mov rax, [KERNEL_MEMORY_ADDRESS + (kernel_end - kernel_start) - 8]
     jmp [entry_point]
+    
+    ; trying to read _start address from elf headers
+
     ; mov rbx, KERNEL_MEMORY_ADDRESS
     ; call parse_elf
     ; jmp rax ; jump to the kernel entry point

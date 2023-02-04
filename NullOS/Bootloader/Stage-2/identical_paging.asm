@@ -35,6 +35,7 @@ setup_identical_paging:
     ret
 
 
+; Paging without huge paging
 
 ; PML4_ENTRY equ 0x1000
 ; PDPT_ENTRY equ 0x2000
