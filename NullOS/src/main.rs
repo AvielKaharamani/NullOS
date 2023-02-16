@@ -1,17 +1,20 @@
 #![feature(rustc_private)]
 #![allow(non_snake_case)]
+#![feature(abi_x86_interrupt)]
 #![no_std] // don't link the Rust standard library
 #![no_main] // disable all Rust-level entry points (main isnt needed because our entry point is _start)
 use core::panic::PanicInfo;
 
 #[macro_use] // vec! macro
 pub mod vga_buffer;
+use crate::interrupts::exceptions::init_idt;
 
-static WELCOME_MSG: &str = "Welcome to NullOS!";
+static OS_NAME: &str = "NullOS";
 
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
-    println!("Welcome msg: {}", WELCOME_MSG);
+    println!("Welcome to {}!", OS_NAME);
+    init_idt();
 
     loop {}
 }

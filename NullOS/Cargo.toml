@@ -7,3 +7,4 @@ exclude = ["Bootloader/*"]
 
 [dependencies]
 volatile = "0.2.6"
+x86_64 = "0.14.2"
