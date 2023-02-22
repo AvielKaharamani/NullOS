@@ -7,14 +7,27 @@ use core::panic::PanicInfo;
 
 #[macro_use] // vec! macro
 pub mod vga_buffer;
-use crate::interrupts::exceptions::init_idt;
+pub mod gdt;
+pub mod interrupts;
 
 static OS_NAME: &str = "NullOS";
 
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
     println!("Welcome to {}!", OS_NAME);
-    init_idt();
+
+    // gdt::init();
+    interrupts::init_idt();
+
+    // x86_64::instructions::interrupts::int3();
+
+    unsafe { interrupts::PICS.lock().initialize() };
+    x86_64::instructions::interrupts::enable();
+
+        
+    // unsafe {
+    //     *(0xdeadbeef as *mut u64) = 42;
+    // };
 
     loop {}
 }
