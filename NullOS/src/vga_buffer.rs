@@ -114,7 +114,18 @@ impl Writer {
     }
 
     fn update_cursor(&self) {
-        //::drivers::cursor::Cursor.update_location(self.row_position, self.column_position);
+        use x86_64::instructions::port::Port;
+        let pos = self.row_position * BUFFER_WIDTH + self.column_position;
+
+        let mut controller_port = Port::new(0x3D4);
+        let mut pos_port = Port::new(0x3D5);
+
+        unsafe {
+            controller_port.write(0x0F as u8);
+            pos_port.write((pos & 0xFF) as u8);
+            controller_port.write(0x0E as u8);
+            pos_port.write(((pos >> 8) & 0xFF) as u8);
+        }
     }
 
     pub fn delete_char(&mut self) {
@@ -151,7 +162,7 @@ impl fmt::Write for Writer {
 
 pub static mut WRITER: Writer = Writer {
     column_position: 0,
-    row_position: 0,
+    row_position: 4,
     color_code: ColorCode::new(Color::LightGray, Color::Black),
 };
 
