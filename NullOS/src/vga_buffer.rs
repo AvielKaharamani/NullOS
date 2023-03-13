@@ -49,9 +49,16 @@ pub struct Writer {
     column_position: usize,
     row_position: usize,
     color_code: ColorCode,
+    column_boundery: usize,
+    row_boundery: usize,
 }
 
 impl Writer {
+    pub fn set_boundery(&mut self) {
+        self.column_boundery = self.column_position;
+        self.row_boundery = self.row_position;
+    }
+
     pub fn write_byte(&mut self, byte: u8) {
         use core::fmt::Write;
         match byte {
@@ -62,6 +69,10 @@ impl Writer {
                 self.new_line();   
                 
             },
+            // Backspace keycode
+            b'\x08' => {
+                self.delete_char();
+            }
             byte => {
                 if self.column_position >= BUFFER_WIDTH {
                     self.new_line();   
@@ -105,7 +116,7 @@ impl Writer {
 
     fn clear_row(&mut self, row: usize) {
         let blank = ScreenChar {
-            ascii_character: b' ',
+            ascii_character: b'\0',
             color_code: self.color_code,
         };
         for col in 0..BUFFER_WIDTH {
@@ -135,12 +146,24 @@ impl Writer {
         };
         let mut col = self.column_position;
         let mut row = self.row_position;
-        if row == 0 && col == 0 {
+        if row == self.row_boundery && col == self.column_boundery {
             return;
         }
         if col == 0 {
             row -= 1;
-            col = BUFFER_WIDTH-1;
+            let mut end_col = 0;
+            let SPACE_ASCII_VALUE = 0x20;
+
+            for i in 0..BUFFER_WIDTH {
+                let buffer = self.buffer();
+                let character = buffer.chars[row][BUFFER_WIDTH-i-1].read();
+                if character.ascii_character != SPACE_ASCII_VALUE {
+                    end_col = BUFFER_WIDTH-i;
+                    break;
+                }
+            }
+
+            col = end_col;
         } else {
             col -= 1;
         }
@@ -164,6 +187,8 @@ pub static mut WRITER: Writer = Writer {
     column_position: 0,
     row_position: 4,
     color_code: ColorCode::new(Color::LightGray, Color::Black),
+    column_boundery: 0,
+    row_boundery: 0
 };
 
 macro_rules! println {
@@ -177,6 +202,14 @@ macro_rules! print {
         #[allow(unused_unsafe)]
         let writer = unsafe { &mut $crate::vga_buffer::WRITER };
         writer.write_fmt(format_args!($($arg)*)).unwrap();
+    });
+}
+
+macro_rules! set_boundery {
+    ($($arg:tt)*) => ({
+        #[allow(unused_unsafe)]
+        let writer = unsafe { &mut $crate::vga_buffer::WRITER };
+        writer.set_boundery();
     });
 }
 
