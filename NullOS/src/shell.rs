@@ -9,9 +9,7 @@ pub fn start_shell() {
         print!("Enter your name: ");
         keyboard::get_string(&mut buff);
         
-        if strings::strcmp(&buff, "aviel".as_bytes()) == 0 {
-
-        }
+        
 
         strings::print_string(&buff);
         println!(" Is best!");
