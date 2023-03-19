@@ -1,5 +1,6 @@
 use lazy_static::lazy_static;
 use pc_keyboard::{layouts, DecodedKey, HandleControl, Keyboard, ScancodeSet1};
+use alloc::string::String;
 
 pub fn read_scancode_value() -> u8 {
     use x86_64::instructions::port::Port;
@@ -35,10 +36,11 @@ pub fn get_char() -> Option<DecodedKey> {
     None
 }
 
-pub fn get_string(buff: &mut [char; 80]) {
+pub fn get_string() -> String {
     set_boundery!();
     #[allow(unused_assignments)]
-    let mut i = 0;
+    let mut buf = String::from("");
+
     loop {
         match get_char() {
             Some(DecodedKey::Unicode(character)) => {
@@ -46,16 +48,13 @@ pub fn get_string(buff: &mut [char; 80]) {
                 if character == '\n' {
                     break;
                 } else if character == '\x08' {
-                    if i > 0 {
-                        i -= 1;
-                    }
+                    buf.pop();
                 } else {
-                    buff[i] = character;
-                    i += 1;
+                    buf.push(character);
                 }
             },
             _ => print!("")
         }
     }
-    buff[i] = '\0';
+    buf
 }
