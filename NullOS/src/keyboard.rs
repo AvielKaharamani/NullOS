@@ -58,3 +58,29 @@ pub fn get_string() -> String {
     }
     buf
 }
+
+pub fn get_password() -> String {
+    set_boundery!();
+    #[allow(unused_assignments)]
+    let mut buf = String::from("");
+
+    loop {
+        match get_char() {
+            Some(DecodedKey::Unicode(character)) => {
+                if character == '\n' {
+                    print!("{}", character);
+                    break;
+                } else if character == '\x08' {
+                    print!("{}", character);
+                    buf.pop();
+                    continue;
+                } else {
+                    buf.push(character);
+                }
+                print!("*");
+            },
+            _ => print!("")
+        }
+    }
+    buf
+}

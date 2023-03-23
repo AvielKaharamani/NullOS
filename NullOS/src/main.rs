@@ -8,7 +8,7 @@
 extern crate alloc;
 
 use core::panic::PanicInfo;
-use alloc::{boxed::Box, vec, vec::Vec, rc::Rc, string::String};
+use alloc::{boxed::Box, vec, vec::Vec, rc::Rc};
 use crate::vga_buffer::clear_screen;
 
 #[macro_use]
@@ -18,12 +18,9 @@ pub mod keyboard;
 pub mod shell;
 pub mod allocator;
 
-static OS_NAME: &str = "NullOS";
-
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
     clear_screen();
-    println!("Welcome to {}!", OS_NAME);
 
     interrupts::init_timer();
     interrupts::init_idt();
@@ -38,7 +35,8 @@ pub extern "C" fn _start() -> ! {
     unsafe { interrupts::PICS.lock().initialize() };
     x86_64::instructions::interrupts::enable();
 
-    shell::start_shell();
+    let mut shell = shell::Shell::new();
+    shell.start_shell();
 
     loop {}
 }
