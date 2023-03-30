@@ -71,6 +71,12 @@ fn panic(info: &PanicInfo) -> ! {
     loop {}
 }
 
+#[alloc_error_handler]
+fn alloc_error_handler(layout: alloc::alloc::Layout) -> ! {
+    panic!("allocation error: {:?}", layout)
+}
+
+#[allow(dead_code)]
 fn test_dynamic_memory() {
         // allocate a number on the heap
         let heap_value = Box::new(41);
@@ -95,9 +101,4 @@ fn test_dynamic_memory() {
         println!("heap_value at {:p}", heap_value);   
     
         println!("It did not crash!");
-}
-
-#[alloc_error_handler]
-fn alloc_error_handler(layout: alloc::alloc::Layout) -> ! {
-    panic!("allocation error: {:?}", layout)
 }
