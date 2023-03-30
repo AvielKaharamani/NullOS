@@ -71,7 +71,7 @@ impl Shell {
     }
     
     fn help(&self) {
-        println!("Available commands:\n\thelp\n\ttimer\n\techo\n\tclear\n\tls\n\tcat\n\tmkdir\n\ttouch\n\tedit\n\trm\n\tcd\n\tpwd\n\tsnake\n\tadduser\n\tdeluser\n\tlsusers\n\tlogout");
+        println!("Available commands:\n\thelp\n\ttimer\n\techo\n\tclear / cls\n\tls\n\tcat\n\tmkdir\n\ttouch\n\tedit\n\trm\n\tcd\n\tpwd\n\tadduser\n\tdeluser\n\tlsusers\n\tlogout");
     }
     
     fn timer(&mut self, args: Vec<&str>) {
@@ -219,6 +219,7 @@ impl Shell {
         let mut username = String::from("");
 
         clear_screen();
+        println!("Login screen:");
 
         while !is_logged {
             print!("Username: ");
@@ -238,6 +239,8 @@ impl Shell {
                 println!("Incorrect Username or Password, please try again\n");
             }
         }
+
+        clear_screen();
         println!("Welcome to NullOS!");
         println!("Logged as: '{}'\n", username);
     }

@@ -17,6 +17,8 @@ pub mod interrupts;
 pub mod keyboard;
 pub mod shell;
 pub mod allocator;
+pub mod ata;
+use crate::ata::Disk;
 
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
@@ -35,8 +37,30 @@ pub extern "C" fn _start() -> ! {
     unsafe { interrupts::PICS.lock().initialize() };
     x86_64::instructions::interrupts::enable();
 
-    let mut shell = shell::Shell::new();
-    shell.start_shell();
+    let disk = &ata::Ata::PRIMARY as &dyn Disk;
+    let mut write_buff: [u8; 512] = [0u8; 512];
+
+    for i in  0..512 {
+        write_buff[i] = i as u8;
+    }
+
+    let mut read_buff: [u8; 512] = [0u8; 512];
+
+    println!("start!");
+
+    unsafe {
+        // disk.write(0, &write_buff);
+        disk.read(0, &mut read_buff);
+        println!("{:#02x}", read_buff[510]);
+        println!("{:#02x}", read_buff[511]);
+    }
+
+    println!("end!");
+
+
+
+    // let mut shell = shell::Shell::new();
+    // shell.start_shell();
 
     loop {}
 }
