@@ -8,7 +8,8 @@ use core::str;
 use x86_64::instructions::port::Port;
 use x86_64::instructions::port::ReadWriteAccess;
 use x86_64::instructions::port::PortGeneric;
-use x86_64::instructions::interrupts;
+
+pub const BLOCK_SIZE: usize = 512;
 
 pub struct PortRange {
     start: u16,
@@ -46,8 +47,9 @@ pub enum DeviceType {
 
 // Have Ata implement this
 pub trait Disk {
-    unsafe fn read(&self, block: u64, buffer: &mut [u8]) -> Result<u8, &str>;
-    unsafe fn write(&self, block: u64, buffer: &[u8]) -> Result<u8, &str>;
+    unsafe fn read(&self, block: usize, buffer: &mut [u8]) -> Result<u8, &str>;
+    unsafe fn write(&self, block: usize, buffer: &[u8]) -> Result<u8, &str>;
+    unsafe fn len(&self) -> usize;
 }
 
 pub struct Ata {
@@ -129,18 +131,16 @@ impl Ata {
 }
 
 impl Disk for Ata {
-    unsafe fn read(&self, block: u64, buffer: &mut [u8]) -> Result<u8, &str> {
-        interrupts::disable();
-
-        if buffer.len() % 512 != 0 {
+    unsafe fn read(&self, block: usize, buffer: &mut [u8]) -> Result<u8, &str> {
+        if buffer.len() % BLOCK_SIZE != 0 {
             return Err("Size of buffer, isnt a multiplication of sector size.");
-        } else if buffer.len() / 512 > 127 {
+        } else if buffer.len() / BLOCK_SIZE > 127 {
             return Err("Can only read 127 sectors at a time in LBA28 mode.");
         } else if buffer.len() == 0 {
             return Err("Size of read buffer can't be 0.");
         }
 
-        let sector_count = (buffer.len()/512) as u8;
+        let sector_count = (buffer.len()/BLOCK_SIZE) as u8;
         let mut command: u8 = 0xE0;
         command |= ((block >> 24) & 0x0F) as u8;
         command |= 0x40; // bit 6 enabled for 28 bit LBA mode.
@@ -151,7 +151,9 @@ impl Disk for Ata {
         self.write_register(RegisterType::LbaMid, (block >> 8) as u8);
         self.write_register(RegisterType::LbaHigh, (block >> 16) as u8);
         self.write_register(RegisterType::Command, 0x20); // READ SECTORS command
+
         for sector in 0..sector_count {
+            println!("Sector number: {}", sector + 1);
             // poll until (!Bussy && DataRequestReady) or Error or DriveFault
             let status = self.poll(RegisterType::Status, |x| (x & 0x80 == 0 && x & 0x8 != 0) || x & 0x1 != 0 || x & 0x20 != 0);
 
@@ -167,7 +169,8 @@ impl Disk for Ata {
 
             // Read data to buffer
             let buff = slice::from_raw_parts_mut(buffer.as_mut_ptr() as *mut u16, buffer.len()/2);
-            for i in 0..buff.len() {
+            
+            for i in 0..(buff.len() / sector_count as usize) {
                 buff[i+(sector as usize*256)] = self.read_data();
             }
             
@@ -177,24 +180,20 @@ impl Disk for Ata {
             }
         }
 
-        interrupts::enable();
-
         // Return the amount of sectors read.
         Ok(sector_count)
     }
 
-    unsafe fn write(&self, block: u64, buffer: &[u8]) -> Result<u8, &str> {
-        interrupts::disable();
-
-        if buffer.len() % 512 != 0 {
+    unsafe fn write(&self, block: usize, buffer: &[u8]) -> Result<u8, &str> {
+        if buffer.len() % BLOCK_SIZE != 0 {
             return Err("Size of buffer, isnt a multiplication of sector size.");
-        } else if buffer.len() / 512 > 127 {
+        } else if buffer.len() / BLOCK_SIZE > 127 {
             return Err("Can only write 127 sectors at a time in LBA28 mode.");
         } else if buffer.len() == 0 {
             return Err("Size of write buffer can't be 0.");
         }
 
-        let sector_count = (buffer.len() / 512) as u8;
+        let sector_count = (buffer.len() / BLOCK_SIZE) as u8;
         let mut command: u8 = 0xE0;
         command |= ((block >> 24) & 0x0F) as u8;
         command |= 0x40; // bit 6 enabled for 28 bit LBA mode.
@@ -208,7 +207,7 @@ impl Disk for Ata {
 
         for sector in 0..sector_count {
             // poll until (!Bussy && DataRequestReady) or Error or DriveFault
-            let status = self.poll(RegisterType::Status, |x| (x & 0x80 == 0 && x & 0x8 == 0) || x & 0x1 != 0 || x & 0x20 != 0);
+            let status = self.poll(RegisterType::Status, |x| (x & 0x80 == 0 && x & 0xc0 == 0x40) || x & 0x1 != 0 || x & 0x20 != 0);
 
             if status & 1 != 0 {
                 if sector == 0 {
@@ -222,21 +221,51 @@ impl Disk for Ata {
 
             // Write data from buffer
             let buff = slice::from_raw_parts(buffer.as_ptr() as *const u16, buffer.len() / 2);
-            for i in 0..buff.len() {
+            for i in 0..(buff.len()/sector_count as usize) {
                 self.write_register(RegisterType::Status, 0x20); // Write to DRQ to initiate data transfer
                 self.write_register(RegisterType::Command, 0x34); // Write to DRQ to initiate data transfer
                 self.write_data(buff[i + (sector as usize * 256)]);
             }
-
             // Give the drive a 400ns delay to reset its DRQ bit
             for _ in 0..4 {
                 self.read_register(RegisterType::Status);
             }
         }
 
-        interrupts::enable();
-
         // Return the amount of sectors written.
         Ok(sector_count)
+    }
+    
+    unsafe fn len(&self) -> usize {
+        return 1048576;
+        // let drive = 0;
+        // // Select the drive
+        // self.write_register(RegisterType::Drive, 0xA0 | (drive << 4));
+
+        // // Wait for the drive to become ready
+        // let status = self.poll(RegisterType::Status, |x| (x & 0x80 == 0 && x & 0xc0 == 0x40));
+        
+        // // Send the identify drive command
+        // self.write_register(RegisterType::Command, 0xEC); // WRITE SECTORS command
+
+        // // Wait for the drive to become ready
+        // let status = self.poll(RegisterType::Status, |x| (x & 0x80 == 0 && x & 0xc0 == 0x40));
+
+        // // Check for errors
+        // if (status & 0x01) != 0 {
+        //     // An error occurred, return -1
+        //     panic!("Failed to identify disk!");
+        // }
+
+        // // Read the drive information from the data register
+        // let mut buffer: [u16; 256] = [0; 256];
+        // for i in 0..256 {
+        //     buffer[i] = self.read_data();
+        // }
+
+        // // Get the number of sectors from the drive information
+        // let num_sectors = (buffer[61] as usize) | ((buffer[60] as usize) << 16);
+
+        // num_sectors * BLOCK_SIZE
     }
 }

@@ -9,7 +9,10 @@ extern crate alloc;
 
 use core::panic::PanicInfo;
 use alloc::{boxed::Box, vec, vec::Vec, rc::Rc};
+use fatfs;
 use crate::vga_buffer::clear_screen;
+use crate::reader_writer::ReaderWriter;
+use crate::fat_fs_adapter::FatFsAdapter;
 
 #[macro_use]
 pub mod vga_buffer;
@@ -18,7 +21,10 @@ pub mod keyboard;
 pub mod shell;
 pub mod allocator;
 pub mod ata;
+pub mod reader_writer;
+pub mod fat_fs_adapter;
 use crate::ata::Disk;
+use fatfs::{FormatVolumeOptions, IntoStorage};
 
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
@@ -38,22 +44,40 @@ pub extern "C" fn _start() -> ! {
     x86_64::instructions::interrupts::enable();
 
     let disk = &ata::Ata::PRIMARY as &dyn Disk;
-    let mut write_buff: [u8; 512] = [0u8; 512];
+    let mut zero_buff = [0u8; 512];
 
-    for i in  0..512 {
-        write_buff[i] = i as u8;
+    for i in 0..zero_buff.len() {
+        zero_buff[i] = 0;
     }
 
-    let mut read_buff: [u8; 512] = [0u8; 512];
+    for i in 0..(unsafe {disk.len()} / 512) {
+        unsafe {disk.write(i, &zero_buff); }
+    }
 
-    println!("start!");
+    let mut adapter = FatFsAdapter::new(ReaderWriter::new(disk));
+
+    // fatfs::format_volume(&mut adapter, FormatVolumeOptions::new()).expect("Failed to format file system");
+    // let fileSystem = fatfs::FileSystem::new(adapter, fatfs::FsOptions::new()).expect("Failed to create file system");
+
+    // let mut write_buff: [u8; 512] = [0u8; 512];
+
+    // for i in  0..512 {
+    //     write_buff[i] = i as u8;
+    // }
+
+    // let mut read_buff: [u8; 512] = [0u8; 512];
+
+    // println!("start!");
+
 
     unsafe {
-        // disk.write(0, &write_buff);
-        disk.read(0, &mut read_buff);
-        println!("{:#02x}", read_buff[510]);
-        println!("{:#02x}", read_buff[511]);
+        println!("Disk size is: {}\nInBlocks: {}", disk.len(), disk.len() / 512);
     }
+    //     disk.write(0, &write_buff);
+    //     disk.read(0, &mut read_buff);
+    //     println!("{}", read_buff[510]);
+    //     println!("{}", read_buff[511]);
+    // }
 
     println!("end!");
 
