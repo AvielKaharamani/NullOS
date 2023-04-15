@@ -152,12 +152,12 @@ impl Writer {
         if col == 0 {
             row -= 1;
             let mut end_col = 0;
-            let SPACE_ASCII_VALUE = 0x20;
+            let space_ascii_value = 0x20;
 
             for i in 0..BUFFER_WIDTH {
                 let buffer = self.buffer();
                 let character = buffer.chars[row][BUFFER_WIDTH-i-1].read();
-                if character.ascii_character != SPACE_ASCII_VALUE {
+                if character.ascii_character != space_ascii_value {
                     end_col = BUFFER_WIDTH-i;
                     break;
                 }
@@ -185,7 +185,7 @@ impl fmt::Write for Writer {
 
 pub static mut WRITER: Writer = Writer {
     column_position: 0,
-    row_position: 4,
+    row_position: 0,
     color_code: ColorCode::new(Color::LightGray, Color::Black),
     column_boundery: 0,
     row_boundery: 0
@@ -205,6 +205,7 @@ macro_rules! print {
     });
 }
 
+#[allow(unused_macros)]
 macro_rules! set_boundery {
     ($($arg:tt)*) => ({
         #[allow(unused_unsafe)]
@@ -226,6 +227,10 @@ macro_rules! hex_dump {
         }
         println!("");
     };
+}
+
+pub fn clear_row(row: usize) {
+    unsafe {WRITER.clear_row(row);}
 }
 
 pub fn clear_screen() {

@@ -1,7 +1,10 @@
-use crate::{keyboard::{self, get_string, get_password}};
-use alloc::vec::Vec;
+use crate::{keyboard::{self, get_string, get_password}, interrupts, inode::InodeType};
+use alloc::{vec::Vec};
 use alloc::string::String;
-use crate::vga_buffer::clear_screen;
+use crate::vga_buffer::{clear_screen, clear_row};
+use crate::file_system::FileSystem;
+use crate::reader_writer::ReaderWriter;
+use crate::ata::Disk;
 
 struct User {
     username: String,
@@ -18,9 +21,14 @@ impl User {
 }
 
 pub struct Shell {
-    saved_tick_counter: u64,
     users: Vec<User>,
-    curr_user_index: usize
+    curr_user_index: usize,
+    file_system: FileSystem,
+}
+
+pub fn update_percentage(percent: u32) {
+    clear_row(1);
+    print!("{}%", percent);
 }
 
 impl Shell {
@@ -29,28 +37,27 @@ impl Shell {
         let mut users = Vec::new();
         users.push(root_user);
 
-        Shell {saved_tick_counter: 0, users: users, curr_user_index: 0}
+        Shell {users: users, curr_user_index: 0, file_system: FileSystem::new(ReaderWriter::new(Disk::new()))}
     }
 
-    pub fn start_shell(&mut self) {
+    pub fn start_shell(&mut self) -> ! {
         self.login();
-        
+
         loop {
             print!(">> ");
             let input = keyboard::get_string();
             let commands: Vec<&str> = input.trim().split(' ').collect();
-    
             
             let command_name = commands[0];
             let args = commands[1..].to_vec();
-    
+            
             if command_name.is_empty() {
                 continue;
             }
     
             match command_name {
                 "help" => self.help(),
-                "timer" => self.timer(args),
+                "sleep" => self.sleep(args),
                 "echo" => self.echo(args),
                 "clear" | "cls" => self.clear(),
                 "ls" => self.ls(args),
@@ -59,8 +66,6 @@ impl Shell {
                 "touch" => self.touch(args),
                 "edit" => self.edit(args),
                 "rm" => self.rm(args),
-                "cd" => self.cd(args),
-                "pwd" => self.pwd(),
                 "adduser" => self.adduser(args),
                 "deluser" => self.deluser(args),
                 "lsusers" => self.lsusers(),
@@ -69,29 +74,19 @@ impl Shell {
             }
         }
     }
-    
+
     fn help(&self) {
-        println!("Available commands:\n\thelp\n\ttimer\n\techo\n\tclear / cls\n\tls\n\tcat\n\tmkdir\n\ttouch\n\tedit\n\trm\n\tcd\n\tpwd\n\tadduser\n\tdeluser\n\tlsusers\n\tlogout");
+        println!("Available commands:\n\thelp\n\tsleep\n\techo\n\tclear / cls\n\tls\n\tcat\n\tmkdir\n\ttouch\n\tedit\n\trm\n\tadduser\n\tdeluser\n\tlsusers\n\tlogout");
     }
     
-    fn timer(&mut self, args: Vec<&str>) {
-        use crate::interrupts;
-        match args[0] {
-            "start" => unsafe {
-                self.saved_tick_counter = interrupts::TICK_COUNTER;
-                println!("Timer started!");
-            },
-            "stop" => unsafe {
-                if self.saved_tick_counter == 0 {
-                    println!("You must first start the timer!");
-                    return;
-                }
-                let delta = interrupts::TICK_COUNTER - self.saved_tick_counter;
-                println!("Time taken is: {} seconds!", delta / 20);
-                self.saved_tick_counter = 0;
-            },
-            _ => println!("Usage: timer [start/stop]")
+    fn sleep(&mut self, args: Vec<&str>) {
+        if args.len() != 1 {
+            println!("Usage: sleep [sec]")
         }
+
+        let sec: u64 = args[0].parse().unwrap_or_default();
+
+        interrupts::sleep(1000 * sec);
     }
     
     fn echo(&self, args: Vec<&str>) {
@@ -99,42 +94,143 @@ impl Shell {
         println!("");
     }
     
-    fn clear(&self) {
+    pub fn clear(&self) {
         clear_screen();
     }
     
-    fn ls(&self, args: Vec<&str>) {
-        println!("ls function");
+    fn ls(&mut self, args: Vec<&str>) {
+        if args.len() > 1 {
+            println!("Usage: ls [path]");
+            return;
+        }
+
+        let path = if args.len() == 1 { args[0] } else { "/" };
+        
+        match self.file_system.get_type_by_path(path) {
+            InodeType::Dir => {},
+            _ => {
+                println!("'{}' is not a dir", path);
+                return;
+            }
+        };
+
+        let inode_index = self.file_system.get_inode_index_from_path(path, 0).unwrap();
+        for (file_name, _) in self.file_system.get_entries_from_dir(inode_index) {
+            println!("{}", file_name);
+        }
     }
     
-    fn cat(&self, args: Vec<&str>) {
-        println!("cat function");
+    fn cat(&mut self, args: Vec<&str>) {
+        if args.len() != 1 {
+            println!("Usage: cat [file_name]");
+            return;
+        }
+
+        match self.file_system.get_type_by_path(args[0]) {
+            InodeType::File => {},
+            _ => {
+                println!("'{}' is not a file", args[0]);
+                return;
+            }
+        };
+
+        let file_inode_index = self.file_system.get_inode_index_from_path(args[0], 0).unwrap();
+
+        let content_vec = self.file_system.get_content_by_inode_index(file_inode_index).to_vec();
+
+        let content = String::from_utf8(content_vec).expect("Found invalid UTF-8");
+
+        if !content.is_empty() {
+            println!("{}", content);
+        }
     }
     
-    fn mkdir(&self, args: Vec<&str>) {
-        println!("mkdir function");
+    fn mkdir(&mut self, args: Vec<&str>) {
+        if args.len() != 1 {
+            println!("Usage: mkdir [dir_name]");
+            return;
+        }
+
+        let (base_dir, entry) = self.file_system.path_to_base_dir_and_entry(args[0]);
+
+        match self.file_system.get_type_by_path(base_dir) {
+            InodeType::Dir => {},
+            _ => {
+                println!("'{}' is not a dir", base_dir);
+                return;
+            }
+        };
+
+        let base_dir_inode_index = self.file_system.get_inode_index_from_path(base_dir, 0).unwrap();
+
+        self.file_system.create_dir_entry(entry, true, base_dir_inode_index);
     }
     
-    fn touch(&self, args: Vec<&str>) {
-        println!("touch function");
+    fn touch(&mut self, args: Vec<&str>) {
+        if args.len() != 1 {
+            println!("Usage: touch [file_name]");
+            return;
+        }
+
+        let (base_dir, entry) = self.file_system.path_to_base_dir_and_entry(args[0]);
+
+        match self.file_system.get_type_by_path(base_dir) {
+            InodeType::Dir => {},
+            _ => {
+                println!("'{}' is not a dir", base_dir);
+                return;
+            }
+        };
+
+        let base_dir_inode_index = self.file_system.get_inode_index_from_path(base_dir, 0).unwrap();
+
+        self.file_system.create_dir_entry(entry, false, base_dir_inode_index);
     }
     
-    fn edit(&self, args: Vec<&str>) {
-        println!("edit function");
+    fn edit(&mut self, args: Vec<&str>) {
+        if args.len() != 1 {
+            println!("Usage: edit [file_name]");
+            return;
+        }
+
+        match self.file_system.get_type_by_path(args[0]) {
+            InodeType::File => {},
+            _ => {
+                println!("'{}' is not a file", args[0]);
+                return;
+            }
+        };
+
+        let mut content = get_string();
+        let content_vec = unsafe {content.as_mut_vec()};
+        let file_inode_index = self.file_system.get_inode_index_from_path(args[0], 0).unwrap();
+
+        self.file_system.set_content_by_inode_index(file_inode_index, content_vec.to_vec());
     }
 
-    fn rm(&self, args: Vec<&str>) {
-        println!("rm function");
-    }
-    
-    fn cd(&self, args: Vec<&str>) {
-        println!("cd function");
-    }
-    
-    fn pwd(&self) {
-        println!("pwd function");
-    }
+    fn rm(&mut self, args: Vec<&str>) {
+        if args.len() != 1 {
+            println!("Usage: rm [file_name]");
+            return;
+        }
 
+        match self.file_system.get_type_by_path(args[0]) {
+            InodeType::File => {},
+            _ => {
+                println!("'{}' is not a file", args[0]);
+                return;
+            }
+        };
+
+        let (base_dir, entry) = self.file_system.path_to_base_dir_and_entry(args[0]);
+
+        let base_dir_inode_index = self.file_system.get_inode_index_from_path(base_dir, 0).unwrap();
+
+        let mut entries = self.file_system.get_entries_from_dir(base_dir_inode_index);
+        entries.remove(entry);
+        self.file_system.set_files_to_dir(&entries, base_dir_inode_index);
+    }
+    
     fn adduser(&mut self, args: Vec<&str>) {
         if args.len() != 2 {
             println!("Usage: adduser [username] [password]");

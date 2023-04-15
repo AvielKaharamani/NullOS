@@ -45,6 +45,7 @@ disk_load:
     sub cx, MAX_SECTORS_IN_ONE_TIME
     add dx, (MAX_SECTORS_IN_ONE_TIME * SECTOR_SIZE) >> SEGMENT_SHIFT
 
+
     jmp disk_load
 
 

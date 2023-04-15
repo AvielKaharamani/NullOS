@@ -45,14 +45,7 @@ pub enum DeviceType {
     Satapi,
 }
 
-// Have Ata implement this
-pub trait Disk {
-    unsafe fn read(&self, block: usize, buffer: &mut [u8]) -> Result<u8, &str>;
-    unsafe fn write(&self, block: usize, buffer: &[u8]) -> Result<u8, &str>;
-    unsafe fn len(&self) -> usize;
-}
-
-pub struct Ata {
+pub struct Disk {
     control_ports: PortRange,
     status_port: u16,
 }
@@ -78,13 +71,11 @@ enum RegisterType {
     Status,
 }
 
-impl Ata {
-    pub const PRIMARY: Ata = Ata::new(PortRange::new(0x1F0, 0x1F7), 0x3F6);
-
-    pub const fn new(control_ports: PortRange, status_port: u16) -> Self {
-        Ata {
-            control_ports: control_ports,
-            status_port: status_port,
+impl Disk {
+    pub const fn new() -> Self {
+        Disk {
+            control_ports: PortRange::new(0x1F0, 0x1F7),
+            status_port: 0x3F6,
         }
     }
 
@@ -128,10 +119,8 @@ impl Ata {
             }
         }
     }
-}
 
-impl Disk for Ata {
-    unsafe fn read(&self, block: usize, buffer: &mut [u8]) -> Result<u8, &str> {
+    pub unsafe fn read(&self, block: usize, buffer: &mut [u8]) -> Result<u8, &str> {
         if buffer.len() % BLOCK_SIZE != 0 {
             return Err("Size of buffer, isnt a multiplication of sector size.");
         } else if buffer.len() / BLOCK_SIZE > 127 {
@@ -153,7 +142,6 @@ impl Disk for Ata {
         self.write_register(RegisterType::Command, 0x20); // READ SECTORS command
 
         for sector in 0..sector_count {
-            println!("Sector number: {}", sector + 1);
             // poll until (!Bussy && DataRequestReady) or Error or DriveFault
             let status = self.poll(RegisterType::Status, |x| (x & 0x80 == 0 && x & 0x8 != 0) || x & 0x1 != 0 || x & 0x20 != 0);
 
@@ -175,16 +163,19 @@ impl Disk for Ata {
             }
             
             // Give the drive a 400ns delay to reset its DRQ bit
+            
             for _ in 0..4 {
                 self.read_register(RegisterType::Status);
             }
+
         }
 
         // Return the amount of sectors read.
         Ok(sector_count)
     }
 
-    unsafe fn write(&self, block: usize, buffer: &[u8]) -> Result<u8, &str> {
+    pub unsafe fn write(&self, block: usize, buffer: &[u8]) -> Result<u8, &str> {
+
         if buffer.len() % BLOCK_SIZE != 0 {
             return Err("Size of buffer, isnt a multiplication of sector size.");
         } else if buffer.len() / BLOCK_SIZE > 127 {
@@ -236,36 +227,7 @@ impl Disk for Ata {
         Ok(sector_count)
     }
     
-    unsafe fn len(&self) -> usize {
-        return 1048576;
-        // let drive = 0;
-        // // Select the drive
-        // self.write_register(RegisterType::Drive, 0xA0 | (drive << 4));
-
-        // // Wait for the drive to become ready
-        // let status = self.poll(RegisterType::Status, |x| (x & 0x80 == 0 && x & 0xc0 == 0x40));
-        
-        // // Send the identify drive command
-        // self.write_register(RegisterType::Command, 0xEC); // WRITE SECTORS command
-
-        // // Wait for the drive to become ready
-        // let status = self.poll(RegisterType::Status, |x| (x & 0x80 == 0 && x & 0xc0 == 0x40));
-
-        // // Check for errors
-        // if (status & 0x01) != 0 {
-        //     // An error occurred, return -1
-        //     panic!("Failed to identify disk!");
-        // }
-
-        // // Read the drive information from the data register
-        // let mut buffer: [u16; 256] = [0; 256];
-        // for i in 0..256 {
-        //     buffer[i] = self.read_data();
-        // }
-
-        // // Get the number of sectors from the drive information
-        // let num_sectors = (buffer[61] as usize) | ((buffer[60] as usize) << 16);
-
-        // num_sectors * BLOCK_SIZE
+    pub unsafe fn len(&self) -> usize {
+        1024 * 1024
     }
 }

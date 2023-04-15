@@ -19,3 +19,6 @@ kernel_start:
     incbin "NullOS.bin"
     align 512, db 0
 kernel_end:
+
+padding:
+    times 1048576 - ($ - $$) db 0
