@@ -1,8 +1,3 @@
-// Primary ATA bus- control ports(0x1F0-0x1F7), status(0x3F6)
-//      IRQ14
-// Secondary ATA bus- control ports(0x170-0x177), status(0x376)
-//      IRQ15
-// Each buss has 2 devices- master and slave
 use core::slice;
 use core::str;
 use x86_64::instructions::port::Port;

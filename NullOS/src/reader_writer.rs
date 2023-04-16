@@ -9,14 +9,6 @@ pub enum SeekFrom {
     End(usize)
 }
 
-/// A readable and writable "stateful" I/O stream that keeps track 
-/// of its current offset within its internal stateless I/O stream.
-///
-/// ## Trait implementations
-/// * This implements the [`Read`] and [`Write`] traits for read and write access.
-/// * This implements the [`Seek`] trait if the underlying I/O stream implements [`KnownLength`].
-/// * This also forwards all other I/O-related traits implemented by the underlying I/O stream.
-/// * This derefs into the inner `IO` type, via both [`Deref`] and [`DerefMut`].
 pub struct ReaderWriter {
     disk: ata::Disk,
     offset: usize,
