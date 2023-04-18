@@ -41,7 +41,7 @@ impl FileSystem {
         
         file_system.set_inode(first_dir, 0);
 
-        println!("");
+        println!("\n\n\n\n");
         update_percentage(0);
 
         

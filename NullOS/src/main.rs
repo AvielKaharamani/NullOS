@@ -12,7 +12,11 @@ entry_point!(kernel_main);
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
     null_os::init(&boot_info);
-    println!("NullOS is now loading...");
+    println!(r"     _  __     ________  ____   __                ___                     
+    / |/ /_ __/ / / __ \/ __/  / /  ___  ___ ____/ (_)__  ___ _           
+   /    / // / / / /_/ /\ \   / /__/ _ \/ _ `/ _  / / _ \/ _ `/ _   _   _ 
+  /_/|_/\_,_/_/_/\____/___/  /____/\___/\_,_/\_,_/_/_//_/\_, / (_) (_) (_)
+                                                        /___/ ");
 
     let mut shell = Shell::new();
 

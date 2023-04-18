@@ -27,7 +27,7 @@ pub struct Shell {
 }
 
 pub fn update_percentage(percent: u32) {
-    clear_row(1);
+    clear_row(5);
     print!("{}%", percent);
 }
 
