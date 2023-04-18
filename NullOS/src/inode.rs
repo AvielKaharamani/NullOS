@@ -1,5 +1,6 @@
 pub const BLOCKS_IN_INODE: usize = 10;
 
+#[derive(PartialEq)]
 pub enum InodeType {
     Free, File, Dir
 }

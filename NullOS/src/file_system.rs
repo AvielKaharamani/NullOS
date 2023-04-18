@@ -233,7 +233,7 @@ impl FileSystem {
         let mut dir_entries = self.get_entries_from_dir(index_of_dir_inode);
 
         if dir_entries.contains_key(entry_name) {
-            println!("{} with this name is already exist.", if is_dir {"Dir"} else {"File"});
+            println!("Entry with this name is already exist.");
             return;
         }
 

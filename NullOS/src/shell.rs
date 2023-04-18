@@ -1,4 +1,4 @@
-use crate::{keyboard::{self, get_string, get_password}, interrupts, inode::InodeType};
+use crate::{keyboard::{self, get_string, get_password}, interrupts, inode::{InodeType}};
 use alloc::{vec::Vec};
 use alloc::string::String;
 use crate::vga_buffer::{clear_screen, clear_row};
@@ -115,8 +115,15 @@ impl Shell {
         };
 
         let inode_index = self.file_system.get_inode_index_from_path(path, 0).unwrap();
-        for (file_name, _) in self.file_system.get_entries_from_dir(inode_index) {
-            println!("{}", file_name);
+        let entries = self.file_system.get_entries_from_dir(inode_index);
+
+        println!("'{}' ({}):", path, entries.len());
+
+        for (file_name, _) in entries {
+            let entry_inode_index = self.file_system.get_inode_index_from_path(&file_name, inode_index).unwrap();
+            let inode = self.file_system.get_inode(entry_inode_index);
+
+            println!("\t- {} ({})", file_name, if inode.inode_type == InodeType::Dir {"Dir"} else {"File"});
         }
     }
     
