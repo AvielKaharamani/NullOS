@@ -1,11 +1,10 @@
-
 #  Screenshots
 
 ![screenshot](https://i.imgur.com/uFgH0J1.png)
 
 #  Compilation Manual
 
-A linux environment is needed for compiling, dosfstools is needed to generate a disk img.
+A linux environment is needed for compiling, bootimage is needed to generate a disk img.
 
 ###  Install Rust
 
